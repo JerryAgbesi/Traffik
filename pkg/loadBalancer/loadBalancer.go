@@ -71,6 +71,9 @@ func LbRequestHandler(lb *LoadBalancer) fasthttp.RequestHandler {
 
 		startTime := time.Now()
 
+		atomic.AddInt32(&backendServer.ActiveConns, 1)
+		defer releaseConnection(backendServer)
+
 		// Handling the proxying of the request to the selected backend server
 		req := fasthttp.AcquireRequest()
 		defer fasthttp.ReleaseRequest(req)
@@ -104,8 +107,6 @@ func LbRequestHandler(lb *LoadBalancer) fasthttp.RequestHandler {
 
 		log.Printf("Request to %s took %v", backendServer.URL.String(), elapsedTime)
 		log.Printf("Active connections to %s: %d", backendServer.URL.String(), backendServer.ActiveConns)	
-
-		releaseConnection(backendServer)
 	}
 
 }
