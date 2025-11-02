@@ -2,8 +2,9 @@
 Traffik is a simple load balancer or proxy server written in Go. I built it to get familiar with go and understand
 some load balancing concepts as well. 
 
+
 ## Todo
-- [ ] Create struct and methods for the load balancer 
+- [x] Create struct and methods for the load balancer 
 - [x] Create struct for the backend servers
 - [x] Add configuration logic for registering servers
 - [x] Implement a proxy handler to redirect traffic from the load balancer to backend servers
