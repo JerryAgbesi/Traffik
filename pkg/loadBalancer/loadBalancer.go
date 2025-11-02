@@ -108,5 +108,4 @@ func LbRequestHandler(lb *LoadBalancer) fasthttp.RequestHandler {
 		log.Printf("Request to %s took %v", backendServer.URL.String(), elapsedTime)
 		log.Printf("Active connections to %s: %d", backendServer.URL.String(), backendServer.ActiveConns)	
 	}
-
 }
