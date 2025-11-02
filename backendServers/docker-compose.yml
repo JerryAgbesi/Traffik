@@ -1,0 +1,19 @@
+services:
+  server_uno:
+    build: .
+    environment:
+      - hostname=server_uno
+    ports:
+      - 9091:8080
+  server_dos:
+    build: .
+    environment:
+      - hostname=server_dos
+    ports:
+      - 9092:8080
+  server_tres:
+    build: .
+    environment:
+      - hostname=server_tres
+    ports:
+      - 9093:8080
