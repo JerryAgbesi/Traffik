@@ -69,6 +69,11 @@ func LbRequestHandler(lb *LoadBalancer) fasthttp.RequestHandler {
 			log.Fatalf("Unknown algorithm type: %s", lb.algorithmType)
 		}
 
+		if backendServer == nil {
+			ctx.Error("No backend servers available", fasthttp.StatusServiceUnavailable)
+			return
+		}
+
 		startTime := time.Now()
 
 		atomic.AddInt32(&backendServer.ActiveConns, 1)

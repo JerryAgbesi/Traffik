@@ -7,7 +7,8 @@ some load balancing concepts as well.
 - [x] Create struct for the backend servers
 - [x] Add configuration logic for registering servers
 - [x] Implement a proxy handler to redirect traffic from the load balancer to backend servers
-- [ ] Add load balancer health checks for servers
+- [x] Add load balancer health check for servers
+- [ ] Improve the random load balancing algorithm
 - [ ] Add support for round robin algorithm
 - [ ] Add support for weighted round robin algorithm
 - [ ] Allow users to specify config file location with flags
