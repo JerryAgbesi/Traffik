@@ -1,46 +1,35 @@
-package loadBalancer
+package loadbalancer
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"sync/atomic"
 	"time"
 
-	"github.com/jerryagbesi/traffik/pkg/server"
+	"github.com/jerryagbesi/traffik/internal/config"
+	"github.com/jerryagbesi/traffik/internal/server"
 	"github.com/valyala/fasthttp"
 )
 
 type LoadBalancer struct {
-	servers       []*server.Server
-	algorithmType string
+	servers   []*server.Server
+	algorithm Algorithm
 }
 
-func NewLoadBalancer(filename, algorithmType string) *LoadBalancer {
-	lb := &LoadBalancer{algorithmType: algorithmType}
-	lb.readJson(filename)
-	return lb
+func NewLoadBalancer(configFile string, algo Algorithm) (*LoadBalancer, error) {
+	servers, err := config.LoadServers(configFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LoadBalancer{
+		servers:   servers,
+		algorithm: algo,
+	}, nil
 }
 
-func (lb *LoadBalancer) readJson(filename string) {
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Fatalf("Error opening file: %v", err)
-	}
-
-	defer file.Close()
-
-	content, err := io.ReadAll(file)
-	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
-	}
-
-	err = json.Unmarshal(content, &lb.servers)
-	if err != nil {
-		log.Fatalf("Error unmarshalling JSON: %v", err)
-	}
+func (lb *LoadBalancer) SetAlgorithm(algo Algorithm) {
+	lb.algorithm = algo
 }
 
 // This is a function I would like to explore using in the future for slowly draining backend servers
@@ -53,21 +42,11 @@ func drainBackend(server *server.Server) {
 
 func releaseConnection(server *server.Server) {
 	atomic.AddInt32(&server.ActiveConns, -1)
-	
 }
 
 func LbRequestHandler(lb *LoadBalancer) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		var backendServer *server.Server
-
-		switch lb.algorithmType {
-		case "random":
-			backendServer = lb.getRandomServer()
-		case "round-robin":
-			backendServer = lb.servers[0]
-		default:
-			log.Fatalf("Unknown algorithm type: %s", lb.algorithmType)
-		}
+		backendServer := lb.algorithm.SelectServer(lb.servers)
 
 		if backendServer == nil {
 			ctx.Error("No backend servers available", fasthttp.StatusServiceUnavailable)
@@ -97,8 +76,9 @@ func LbRequestHandler(lb *LoadBalancer) fasthttp.RequestHandler {
 
 		err := fasthttp.Do(req, resp)
 		if err != nil {
-			log.Fatalf("Error proxying request: %v", err)
+			log.Printf("Error proxying request: %v", err)
 			ctx.Error("Failed to forward request to backend", fasthttp.StatusInternalServerError)
+			return
 		}
 
 		// Copy and send over the original response from the backend server
@@ -108,9 +88,9 @@ func LbRequestHandler(lb *LoadBalancer) fasthttp.RequestHandler {
 
 		elapsedTime := time.Since(startTime)
 
-		backendServer.ReponseTime = elapsedTime
+		backendServer.ResponseTime = elapsedTime
 
 		log.Printf("Request to %s took %v", backendServer.URL.String(), elapsedTime)
-		log.Printf("Active connections to %s: %d", backendServer.URL.String(), backendServer.ActiveConns)	
+		log.Printf("Active connections to %s: %d", backendServer.URL.String(), backendServer.ActiveConns)
 	}
 }

@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
-	"os"
 	"sync/atomic"
-	
+
 	"github.com/valyala/fasthttp"
 )
 
@@ -14,25 +14,28 @@ var reqCount uint32
 
 type response struct {
 	Message    string `json:"message"`
-	Hostname   string `json:"hostname"`
+	// Hostname   string `json:"hostname"`
 	ReqCounter uint32 `json:"req_counter"`
-	// Headers    map[string]string `json:"headers"`	
+	// Headers    map[string]string `json:"headers"`
 }
 
 func main() {
-	server := &fasthttp.Server{Handler: requestHandler, Name: "Traffik Backend Servers"}
+	port := flag.String("port", "8080", "Port to run the backend server on")
+	flag.Parse()
 
-	err := server.ListenAndServe(":8080")
+	server := &fasthttp.Server{Handler: requestHandler, Name: "Traffik Backend Server"}
+
+	fmt.Printf("Backend server running on port :%s\n", *port)
+	err := server.ListenAndServe(":" + *port)
 	if err != nil {
 		log.Fatalf("Error listening and serving: %v", err)
 	}
 }
 
 func requestHandler(ctx *fasthttp.RequestCtx) {
-	hostname := os.Getenv("hostname")
+	// hostname := os.Getenv("hostname")
 	res := response{
-		Message:    fmt.Sprintf("A JSON response from %s counter %d", hostname, atomic.LoadUint32(&reqCount)),
-		Hostname:   hostname,
+		Message:    fmt.Sprintf("A JSON response from counter %d", atomic.LoadUint32(&reqCount)),
 		ReqCounter: atomic.LoadUint32(&reqCount),
 	}
 

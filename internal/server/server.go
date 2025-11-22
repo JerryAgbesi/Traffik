@@ -8,5 +8,5 @@ import (
 type Server struct{
 	URL *url.URL `json:"url"`
 	ActiveConns int32 `json:"active_conns"`
-	ReponseTime time.Duration `json:"response_time"`
+	ResponseTime time.Duration `json:"response_time"`
 }
